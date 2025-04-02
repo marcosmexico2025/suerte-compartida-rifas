@@ -9,13 +9,219 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      [_ in never]: never
+      buyers: {
+        Row: {
+          created_at: string | null
+          email: string | null
+          id: string
+          name: string
+          notes: string | null
+          payment_method: string
+          payment_proof: string | null
+          phone: string
+        }
+        Insert: {
+          created_at?: string | null
+          email?: string | null
+          id?: string
+          name: string
+          notes?: string | null
+          payment_method: string
+          payment_proof?: string | null
+          phone: string
+        }
+        Update: {
+          created_at?: string | null
+          email?: string | null
+          id?: string
+          name?: string
+          notes?: string | null
+          payment_method?: string
+          payment_proof?: string | null
+          phone?: string
+        }
+        Relationships: []
+      }
+      raffle_numbers: {
+        Row: {
+          buyer_id: string | null
+          created_at: string | null
+          id: string
+          number: number
+          seller_id: string | null
+          status: string
+          updated_at: string | null
+        }
+        Insert: {
+          buyer_id?: string | null
+          created_at?: string | null
+          id?: string
+          number: number
+          seller_id?: string | null
+          status: string
+          updated_at?: string | null
+        }
+        Update: {
+          buyer_id?: string | null
+          created_at?: string | null
+          id?: string
+          number?: number
+          seller_id?: string | null
+          status?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "raffle_numbers_buyer_id_fkey"
+            columns: ["buyer_id"]
+            isOneToOne: false
+            referencedRelation: "buyers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      raffle_request_numbers: {
+        Row: {
+          number_id: string
+          request_id: string
+        }
+        Insert: {
+          number_id: string
+          request_id: string
+        }
+        Update: {
+          number_id?: string
+          request_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "raffle_request_numbers_number_id_fkey"
+            columns: ["number_id"]
+            isOneToOne: false
+            referencedRelation: "raffle_numbers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "raffle_request_numbers_request_id_fkey"
+            columns: ["request_id"]
+            isOneToOne: false
+            referencedRelation: "raffle_requests"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      raffle_requests: {
+        Row: {
+          buyer_id: string
+          created_at: string | null
+          id: string
+          status: string
+          updated_at: string | null
+        }
+        Insert: {
+          buyer_id: string
+          created_at?: string | null
+          id?: string
+          status: string
+          updated_at?: string | null
+        }
+        Update: {
+          buyer_id?: string
+          created_at?: string | null
+          id?: string
+          status?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "raffle_requests_buyer_id_fkey"
+            columns: ["buyer_id"]
+            isOneToOne: false
+            referencedRelation: "buyers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      raffle_settings: {
+        Row: {
+          created_at: string | null
+          description: string
+          id: string
+          image_url: string | null
+          payment_methods: string[] | null
+          price_per_number: number
+          title: string
+          updated_at: string | null
+          winning_number: number | null
+        }
+        Insert: {
+          created_at?: string | null
+          description: string
+          id?: string
+          image_url?: string | null
+          payment_methods?: string[] | null
+          price_per_number?: number
+          title: string
+          updated_at?: string | null
+          winning_number?: number | null
+        }
+        Update: {
+          created_at?: string | null
+          description?: string
+          id?: string
+          image_url?: string | null
+          payment_methods?: string[] | null
+          price_per_number?: number
+          title?: string
+          updated_at?: string | null
+          winning_number?: number | null
+        }
+        Relationships: []
+      }
+      user_profiles: {
+        Row: {
+          color: string
+          created_at: string | null
+          id: string
+          name: string
+          role: string
+          updated_at: string | null
+        }
+        Insert: {
+          color?: string
+          created_at?: string | null
+          id: string
+          name: string
+          role: string
+          updated_at?: string | null
+        }
+        Update: {
+          color?: string
+          created_at?: string | null
+          id?: string
+          name?: string
+          role?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      approve_raffle_request: {
+        Args: {
+          request_id: string
+        }
+        Returns: boolean
+      }
+      reject_raffle_request: {
+        Args: {
+          request_id: string
+        }
+        Returns: boolean
+      }
     }
     Enums: {
       [_ in never]: never
