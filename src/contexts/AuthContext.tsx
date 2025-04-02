@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { User } from '@/lib/types';
 import { supabase } from '@/integrations/supabase/client';
@@ -48,16 +47,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
 
       // Ensure authUsers.users exists and is an array
-      if (!authUsers || !authUsers.users) {
+      if (!authUsers || !Array.isArray(authUsers.users)) {
         console.error('Auth users data is not in expected format:', authUsers);
         return [];
       }
 
       // Combine profile and auth info
       const combinedUsers = profiles.map(profile => {
-        const authUser = authUsers.users && Array.isArray(authUsers.users) 
-          ? authUsers.users.find(user => user.id === profile.id)
-          : null;
+        // Safely find matching auth user
+        const authUser = authUsers.users.find(user => user.id === profile.id);
         
         return {
           id: profile.id,
