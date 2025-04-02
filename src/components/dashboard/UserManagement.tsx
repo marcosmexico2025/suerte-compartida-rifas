@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -94,7 +93,6 @@ const UserManagement = () => {
     if (!editingUser) return;
 
     try {
-      // Fix: Use ISO string format instead of Date object
       const { error } = await supabase
         .from('user_profiles')
         .update({

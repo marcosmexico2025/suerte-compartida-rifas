@@ -47,22 +47,24 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         return [];
       }
 
-      // Ensure authUsers.users exists before proceeding
-      if (!authUsers || !authUsers.users || !Array.isArray(authUsers.users)) {
+      // Ensure authUsers.users exists and is an array
+      if (!authUsers || !authUsers.users) {
         console.error('Auth users data is not in expected format:', authUsers);
         return [];
       }
 
       // Combine profile and auth info
       const combinedUsers = profiles.map(profile => {
-        const authUser = authUsers.users.find(user => user.id === profile.id);
+        const authUser = authUsers.users && Array.isArray(authUsers.users) 
+          ? authUsers.users.find(user => user.id === profile.id)
+          : null;
+        
         return {
           id: profile.id,
           name: profile.name,
           email: authUser?.email || 'No email',
           color: profile.color,
-          // Ensure role is cast to the correct type
-          role: (profile.role as 'admin' | 'operator') || 'operator'
+          role: profile.role as 'admin' | 'operator'
         };
       });
 
@@ -98,8 +100,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             email: session.user.email || '',
             name: profile.name,
             color: profile.color,
-            // Ensure role is cast to the correct type
-            role: (profile.role as 'admin' | 'operator')
+            role: profile.role as 'admin' | 'operator'
           });
         }
       }
@@ -127,8 +128,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             email: session.user.email || '',
             name: profile.name,
             color: profile.color,
-            // Ensure role is cast to the correct type
-            role: (profile.role as 'admin' | 'operator')
+            role: profile.role as 'admin' | 'operator'
           });
         }
         
@@ -168,8 +168,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             email: data.user.email || '',
             name: profile.name,
             color: profile.color,
-            // Ensure role is cast to the correct type
-            role: (profile.role as 'admin' | 'operator')
+            role: profile.role as 'admin' | 'operator'
           });
           return true;
         }
