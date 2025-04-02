@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { RaffleNumber, Buyer, RaffleSettings, RaffleRequest, PaymentMethod } from '@/lib/types';
 import { useAuth } from './AuthContext';
@@ -57,12 +56,10 @@ export const RaffleProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   const [selectedNumbers, setSelectedNumbers] = useState<number[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Load data from Supabase
   useEffect(() => {
     const loadData = async () => {
       setIsLoading(true);
       try {
-        // Load raffle settings
         const { data: settingsData, error: settingsError } = await supabase
           .from('raffle_settings')
           .select('*')
@@ -75,7 +72,6 @@ export const RaffleProvider: React.FC<{ children: React.ReactNode }> = ({ childr
           setSettings(settingsData as RaffleSettings);
         }
 
-        // Load raffle numbers
         const { data: numbersData, error: numbersError } = await supabase
           .from('raffle_numbers')
           .select('*')
@@ -87,7 +83,6 @@ export const RaffleProvider: React.FC<{ children: React.ReactNode }> = ({ childr
           setRaffleNumbers(numbersData as RaffleNumber[]);
         }
 
-        // Load buyers
         const { data: buyersData, error: buyersError } = await supabase
           .from('buyers')
           .select('*');
@@ -98,7 +93,6 @@ export const RaffleProvider: React.FC<{ children: React.ReactNode }> = ({ childr
           setBuyers(buyersData as Buyer[]);
         }
 
-        // Load requests with buyer information
         const { data: requestsData, error: requestsError } = await supabase
           .from('raffle_requests')
           .select(`
@@ -109,7 +103,6 @@ export const RaffleProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         if (requestsError) {
           console.error('Error fetching requests:', requestsError);
         } else if (requestsData) {
-          // Get request numbers for each request
           const requestsWithNumbers = await Promise.all(
             requestsData.map(async (request) => {
               const { data: numberRelations } = await supabase
@@ -118,7 +111,6 @@ export const RaffleProvider: React.FC<{ children: React.ReactNode }> = ({ childr
                 .eq('request_id', request.id);
 
               if (numberRelations) {
-                // Get the actual numbers for each relation
                 const numbers: number[] = [];
                 for (const relation of numberRelations) {
                   const { data: numberData } = await supabase
@@ -132,16 +124,23 @@ export const RaffleProvider: React.FC<{ children: React.ReactNode }> = ({ childr
                   }
                 }
 
+                const status = request.status as "pending" | "approved" | "rejected";
+                
                 return {
                   ...request,
-                  numbers
+                  numbers,
+                  status
                 };
               }
-              return { ...request, numbers: [] };
+              return { 
+                ...request, 
+                numbers: [],
+                status: request.status as "pending" | "approved" | "rejected" 
+              };
             })
           );
 
-          setRequests(requestsWithNumbers as unknown as RaffleRequest[]);
+          setRequests(requestsWithNumbers as RaffleRequest[]);
         }
 
       } catch (error) {
@@ -181,7 +180,6 @@ export const RaffleProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     }
 
     try {
-      // Create a new buyer in Supabase
       const { data: newBuyerData, error: buyerError } = await supabase
         .from('buyers')
         .insert({
@@ -199,7 +197,6 @@ export const RaffleProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         throw new Error(`Error creating buyer: ${buyerError.message}`);
       }
 
-      // Create a new request
       const { data: requestData, error: requestError } = await supabase
         .from('raffle_requests')
         .insert({
@@ -213,9 +210,7 @@ export const RaffleProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         throw new Error(`Error creating request: ${requestError.message}`);
       }
 
-      // For each selected number, update its status and create relation
       for (const number of selectedNumbers) {
-        // Find the number in raffle_numbers
         const { data: numberData } = await supabase
           .from('raffle_numbers')
           .select('id')
@@ -223,13 +218,11 @@ export const RaffleProvider: React.FC<{ children: React.ReactNode }> = ({ childr
           .single();
 
         if (numberData) {
-          // Update number status
           await supabase
             .from('raffle_numbers')
             .update({ status: 'processing' })
             .eq('id', numberData.id);
 
-          // Create relation
           await supabase
             .from('raffle_request_numbers')
             .insert({
@@ -239,19 +232,18 @@ export const RaffleProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         }
       }
 
-      // Update local state
       const newBuyer: Buyer = newBuyerData;
       setBuyers(prev => [...prev, newBuyer]);
 
       const newRequest: RaffleRequest = {
         ...requestData,
         numbers: [...selectedNumbers],
-        buyer: newBuyer
+        buyer: newBuyer,
+        status: requestData.status as "pending" | "approved" | "rejected"
       };
 
       setRequests(prev => [...prev, newRequest]);
 
-      // Update numbers status to processing
       setRaffleNumbers(prev =>
         prev.map(num =>
           selectedNumbers.includes(num.number) ? { ...num, status: 'processing' } : num
@@ -270,7 +262,6 @@ export const RaffleProvider: React.FC<{ children: React.ReactNode }> = ({ childr
 
   const approveRequest = async (requestId: string): Promise<boolean> => {
     try {
-      // Call Supabase function to approve request
       const { data, error } = await supabase.rpc('approve_raffle_request', {
         request_id: requestId
       });
@@ -279,7 +270,6 @@ export const RaffleProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         throw new Error(`Error approving request: ${error.message}`);
       }
 
-      // Update local state
       const request = requests.find(r => r.id === requestId);
       if (request) {
         setRequests(prev =>
@@ -306,7 +296,6 @@ export const RaffleProvider: React.FC<{ children: React.ReactNode }> = ({ childr
 
   const rejectRequest = async (requestId: string): Promise<boolean> => {
     try {
-      // Call Supabase function to reject request
       const { data, error } = await supabase.rpc('reject_raffle_request', {
         request_id: requestId
       });
@@ -315,7 +304,6 @@ export const RaffleProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         throw new Error(`Error rejecting request: ${error.message}`);
       }
 
-      // Update local state
       const request = requests.find(r => r.id === requestId);
       if (request) {
         setRequests(prev =>
@@ -347,7 +335,6 @@ export const RaffleProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     }
 
     try {
-      // Create a new buyer in Supabase
       const { data: newBuyerData, error: buyerError } = await supabase
         .from('buyers')
         .insert({
@@ -365,7 +352,6 @@ export const RaffleProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         throw new Error(`Error creating buyer: ${buyerError.message}`);
       }
 
-      // Update numbers status to sold
       for (const number of numbers) {
         const { data: numberData } = await supabase
           .from('raffle_numbers')
@@ -385,7 +371,6 @@ export const RaffleProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         }
       }
 
-      // Update local state
       const newBuyer: Buyer = newBuyerData;
       setBuyers(prev => [...prev, newBuyer]);
 
@@ -432,7 +417,6 @@ export const RaffleProvider: React.FC<{ children: React.ReactNode }> = ({ childr
 
   const assignNumbersToSeller = async (numbers: number[], sellerId: string): Promise<boolean> => {
     try {
-      // Update numbers in Supabase
       for (const number of numbers) {
         const { data: numberData } = await supabase
           .from('raffle_numbers')
@@ -451,7 +435,6 @@ export const RaffleProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         }
       }
 
-      // Update local state
       setRaffleNumbers(prev =>
         prev.map(num =>
           numbers.includes(num.number)
