@@ -94,12 +94,13 @@ const UserManagement = () => {
     if (!editingUser) return;
 
     try {
+      // Fix: Use ISO string format instead of Date object
       const { error } = await supabase
         .from('user_profiles')
         .update({
           name: editForm.name,
           color: editForm.color,
-          updated_at: new Date()
+          updated_at: new Date().toISOString()
         })
         .eq('id', editingUser.id);
 

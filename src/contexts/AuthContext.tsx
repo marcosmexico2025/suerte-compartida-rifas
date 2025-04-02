@@ -47,6 +47,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         return [];
       }
 
+      // Ensure authUsers.users exists before proceeding
+      if (!authUsers || !authUsers.users || !Array.isArray(authUsers.users)) {
+        console.error('Auth users data is not in expected format:', authUsers);
+        return [];
+      }
+
       // Combine profile and auth info
       const combinedUsers = profiles.map(profile => {
         const authUser = authUsers.users.find(user => user.id === profile.id);
@@ -55,7 +61,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           name: profile.name,
           email: authUser?.email || 'No email',
           color: profile.color,
-          role: profile.role as 'admin' | 'operator'
+          // Ensure role is cast to the correct type
+          role: (profile.role as 'admin' | 'operator') || 'operator'
         };
       });
 
@@ -91,7 +98,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             email: session.user.email || '',
             name: profile.name,
             color: profile.color,
-            role: profile.role
+            // Ensure role is cast to the correct type
+            role: (profile.role as 'admin' | 'operator')
           });
         }
       }
@@ -119,7 +127,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             email: session.user.email || '',
             name: profile.name,
             color: profile.color,
-            role: profile.role
+            // Ensure role is cast to the correct type
+            role: (profile.role as 'admin' | 'operator')
           });
         }
         
@@ -159,7 +168,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             email: data.user.email || '',
             name: profile.name,
             color: profile.color,
-            role: profile.role
+            // Ensure role is cast to the correct type
+            role: (profile.role as 'admin' | 'operator')
           });
           return true;
         }
