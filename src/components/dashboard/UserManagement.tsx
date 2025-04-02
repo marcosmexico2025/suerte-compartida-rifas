@@ -9,33 +9,73 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from 'sonner';
 import { User } from '@/lib/types';
+import { supabase } from '@/integrations/supabase/client';
 
-// This is a mock component since we're not fully integrating with Supabase in this demo
 const UserManagement = () => {
   const { users } = useAuth();
   const [newUser, setNewUser] = useState({
     email: '',
+    password: '', // Added password field for user creation
     name: '',
     color: '#6B7280',
-    role: 'operator'
+    role: 'operator' as 'admin' | 'operator'
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
     
-    // In a real app, this would call an API to create the user
-    setTimeout(() => {
-      toast.success('Usuario creado exitosamente (simulado)');
+    try {
+      // Create the user in Supabase Auth
+      const { data: authData, error: authError } = await supabase.auth.admin.createUser({
+        email: newUser.email,
+        password: newUser.password,
+        email_confirm: true
+      });
+
+      if (authError) {
+        toast.error(`Error creating user: ${authError.message}`);
+        setIsSubmitting(false);
+        return;
+      }
+
+      if (!authData.user) {
+        toast.error('Error creating user: User data not returned');
+        setIsSubmitting(false);
+        return;
+      }
+
+      // Create the user profile
+      const { error: profileError } = await supabase
+        .from('user_profiles')
+        .insert({
+          id: authData.user.id,
+          name: newUser.name,
+          color: newUser.color,
+          role: newUser.role
+        });
+
+      if (profileError) {
+        toast.error(`Error creating user profile: ${profileError.message}`);
+        setIsSubmitting(false);
+        return;
+      }
+
+      toast.success('Usuario creado exitosamente');
       setNewUser({
         email: '',
+        password: '',
         name: '',
         color: '#6B7280',
         role: 'operator'
       });
+    } catch (error) {
+      console.error('Error in user creation:', error);
+      toast.error('Error al crear el usuario');
+    } finally {
       setIsSubmitting(false);
-    }, 1000);
+    }
   };
 
   return (
@@ -89,6 +129,18 @@ const UserManagement = () => {
                 value={newUser.email}
                 onChange={(e) => setNewUser({ ...newUser, email: e.target.value })}
                 placeholder="correo@ejemplo.com"
+                required
+              />
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="password">Contraseña</Label>
+              <Input
+                id="password"
+                type="password"
+                value={newUser.password}
+                onChange={(e) => setNewUser({ ...newUser, password: e.target.value })}
+                placeholder="Contraseña segura"
                 required
               />
             </div>
