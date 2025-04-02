@@ -1,3 +1,4 @@
+
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { User } from '@/lib/types';
 import { supabase } from '@/integrations/supabase/client';
@@ -9,6 +10,13 @@ interface AuthContextType {
   logout: () => void;
   isLoading: boolean;
   refreshUsers: () => Promise<void>;
+}
+
+// Define an interface for the auth user to fix the TypeScript error
+interface AuthUser {
+  id: string;
+  email?: string;
+  // Add other properties as needed
 }
 
 const AuthContext = createContext<AuthContextType | null>(null);
@@ -54,8 +62,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       // Combine profile and auth info
       const combinedUsers = profiles.map(profile => {
-        // Safely find matching auth user
-        const authUser = authUsers.users.find(user => user.id === profile.id);
+        // Safely find matching auth user - explicitly type as AuthUser[]
+        const authUser = authUsers.users.find((user: AuthUser) => user.id === profile.id);
         
         return {
           id: profile.id,
